@@ -8,13 +8,14 @@ object AppTestSparkSession{
 		.builder()
 		.appName("unit-tests")
 		.config("spark.master", "local[1]")
-		.config("spark.driver.memory", "5g")
+		.config("spark.driver.memory", "1g")
 		.config("spark.sql.shuffle.partitions", "1")
 		.config("spark.rdd.compress", "false")
 		.config("spark.shuffle.compress", "false")
 		.config("spark.dynamicAllocation.enabled", "false")
-		//    .config("spark.ui.enabled", "false")
+		.config("spark.ui.enabled", "false")
 		.config("spark.ui.showConsoleProgress", "false")
+		.config("spark.driver.host","10.201.128.23")
 		.getOrCreate()
 
 
