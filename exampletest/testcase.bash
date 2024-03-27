@@ -27,6 +27,7 @@ do
    --conf spark.executor.cores=1 \
    --conf spark.driver.host=`hostname -i` \
    --conf spark.ui.showConsoleProgress=true \
+   --conf spark.sql.autoBroadcastJoinThreshold=-1 \
    --class  org.example.idDataTypeSparkExample.Main \
    ../IDDataTypeSparkExample.jar \
   workDirectory=$workDirectoryRoot/$fileFormat/$buildCompression \
@@ -41,8 +42,9 @@ do
   buildExplain=$buildExplain \
   testJoins=$testJoins \
   testJoinsExplain=$testJoinsExplain \
-  waitForUser=$waitForUser"
+  waitForUser=$waitForUser \
+  logStatDir=$workDirectoryRoot/stat"
   echo $CMD
-  $CMD >> $fileFormat$buildCompression.log
-done > testcase.log
-
+  $CMD
+done
+2147483647

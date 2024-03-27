@@ -45,7 +45,7 @@ class Application(config: Config) {
         .orderBy(Columns._type_name)
 
       analyzeStatDf.show()
-      analyzeStatDf.write.mode(SaveMode.Append).parquet(s"${config.workDirectory}/analyze_stat_df")
+      analyzeStatDf.write.mode(SaveMode.Append).parquet(s"${config.logStatDir}/analyze_stat_df")
 
     }
 

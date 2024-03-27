@@ -29,6 +29,7 @@ object Main {
       testJoins = cfg(ConfigKeys.testJoins).toBoolean,
       testJoinsExplain = cfg(ConfigKeys.testJoinsExplain).toBoolean,
       waitForUser = cfg(ConfigKeys.waitForUser).toBoolean,
+      logStatDir = cfg(ConfigKeys.logStatDir)
     )
 
     new Application(config).run()

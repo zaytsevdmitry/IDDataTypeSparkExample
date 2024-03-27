@@ -14,6 +14,7 @@ object ConfigKeys {
   val testJoins = "testJoins"
   val testJoinsExplain = "testJoinsExplain"
   val waitForUser = "waitForUser"
+  val logStatDir = "logStatDir"
 
   val params = Seq(
     workDirectory,
@@ -28,5 +29,6 @@ object ConfigKeys {
     buildExplain,
     testJoins,
     testJoinsExplain,
-    waitForUser)
+    waitForUser,
+    logStatDir)
 }

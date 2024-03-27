@@ -13,5 +13,6 @@ case class Config(
   buildExplain:Boolean,
   testJoins: Boolean,
   testJoinsExplain: Boolean,
-  waitForUser: Boolean
+  waitForUser: Boolean,
+  logStatDir:String
 )
