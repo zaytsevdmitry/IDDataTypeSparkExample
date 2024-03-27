@@ -16,15 +16,18 @@ object Main {
     cfg.foreach(println)
 
     val config = Config(
-      rangeStartId = cfg(ConfigKeys.rangeStartId).toLong,
-      rangeEndId = cfg(ConfigKeys.rangeEndId).toLong,
-      rangeStep = cfg(ConfigKeys.rangeStep).toLong,
       workDirectory = cfg(ConfigKeys.workDirectory),
+      fileFormat =  cfg(ConfigKeys.fileFormat),
       buildData = cfg(ConfigKeys.buildData).toBoolean,
+      buildRangeStartId = cfg(ConfigKeys.buildRangeStartId).toLong,
+      buildRangeEndId = cfg(ConfigKeys.buildRangeEndId).toLong,
+      buildRangeStep = cfg(ConfigKeys.buildRangeStep).toInt,
       buildCached = cfg(ConfigKeys.buildCached).toBoolean,
       buildRepartition = cfg(ConfigKeys.buildRepartition).toInt,
       buildCompression = cfg(ConfigKeys.buildCompression),
-      buildJoins = cfg(ConfigKeys.testJoins).toBoolean,
+      buildExplain = cfg(ConfigKeys.buildExplain).toBoolean,
+      testJoins = cfg(ConfigKeys.testJoins).toBoolean,
+      testJoinsExplain = cfg(ConfigKeys.testJoinsExplain).toBoolean,
       waitForUser = cfg(ConfigKeys.waitForUser).toBoolean,
     )
 

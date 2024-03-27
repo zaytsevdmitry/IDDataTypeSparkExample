@@ -1,8 +1,11 @@
 package org.example.idDataTypeSparkExample
 
-import org.apache.spark.sql.SparkSession
-import org.example.idDataTypeSparkExample.shared.{Columns, Config}
+import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.example.idDataTypeSparkExample.shared.{Columns, Config, ConfigKeys}
+import org.apache.spark.sql.functions.lit
 
+import java.sql.Timestamp
+import java.util.Date
 import scala.io.StdIn.readLine
 
 class Application(config: Config) {
@@ -10,32 +13,40 @@ class Application(config: Config) {
   sparkSession.sparkContext.setLogLevel("ERROR")
 
   def run(): Unit = {
-    val dataStore = new PrepareData(sparkSession)
+    val dataStore = new BuildData(sparkSession)
 
     if (config.buildData) {
       dataStore
         .writeDFs(
-          config.workDirectory,
-          dataStore
-            .buildSource(config.rangeStartId, config.rangeEndId, config.rangeStep, config.buildCached),
-          config.buildRepartition,
-          config.buildCompression
+          workDirectory = config.workDirectory,
+          sourceDataFrame = dataStore
+            .buildSource(
+              config.buildRangeStartId,
+              config.buildRangeEndId,
+              config.buildRangeStep,
+              config.buildCached),
+          repartitionWrite = config.buildRepartition,
+          compression = config.buildCompression,
+          fileFormat = config.fileFormat
         )
     }
     val dataStatDf = dataStore.statSize(config.workDirectory).orderBy(Columns._type_name).cache()
     dataStatDf.show()
 
-    if (config.buildJoins) {
+    if (config.testJoins) {
       val jointestDf = new JoinTest(sparkSession)
-				.runJoins(config.workDirectory)
-				.orderBy(Columns._type_name).cache()
+        .runJoins(config.workDirectory, config.fileFormat)
+        .orderBy(Columns._type_name).cache()
 
-			jointestDf.show()
+      jointestDf.show()
 
-			new AnalyzeStat(sparkSession)
-				.analyzeStat(dataStatDf, jointestDf)
-				.orderBy(Columns._type_name)
-				.show()
+      val analyzeStatDf = new AnalyzeStat(sparkSession)
+        .analyzeStat(dataStatDf, jointestDf,config.fileFormat,config.buildCompression)
+        .orderBy(Columns._type_name)
+
+      analyzeStatDf.show()
+      analyzeStatDf.write.mode(SaveMode.Append).parquet(s"${config.workDirectory}/analyze_stat_df")
+
     }
 
     if (config.waitForUser) {

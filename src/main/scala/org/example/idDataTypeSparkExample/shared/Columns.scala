@@ -9,9 +9,10 @@ object Columns {
   val _type_name = "type_name"
   val _size_mb = "size_mb"
   val _size_mb_100_pcnt = "size_mb_100_pcnt"
-  val _duration = "duration"
+  val _duration_s = "duration_s"
   val _duration_100_pcnt = "duration_100_pcnt"
   val _count_rows = "count_rows"
   val _count_distinct_id = "count_distinct_id"
   val _avg_id = "avg_id"
+  val _log_dt = "log_dt"
 }

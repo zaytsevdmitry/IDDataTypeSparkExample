@@ -10,7 +10,7 @@ class ApplicationTest extends Test {
 
   "buildSource" should "work" in {
 
-    val s = new PrepareData(sparkSession).buildSource(startId=1L, endId=20L, step=1L, cached=true)
+    val s = new BuildData(sparkSession).buildSource(startId=1L, endId=20L, step=1L, cached=true)
     s.show(1000)
     assert(s.count() == 20)
   }
@@ -29,40 +29,56 @@ class ApplicationTest extends Test {
       fs.delete(writeFstestDirPath, true)
   }
 
-  def witeDFs(): Unit = {
-    val ds = new PrepareData(sparkSession)
-    ds.writeDFs(writeFstestDir, ds.buildSource(startId=1L, endId=20L, step=1L, cached=true),1, "none")
-
+  def witeDFs(fileFormat:String): Unit = {
+    val ds = new BuildData(sparkSession)
+    ds.writeDFs(
+      writeFstestDir,
+      ds.buildSource(
+        startId=1L,
+        endId=20L,
+        step=1L,
+        cached=true),
+      1,
+      "none",
+      fileFormat)
   }
 
-  "WriteDfs" should "work" in {
+  "Write parquet" should "work" in {
     cleanDFs()
-    witeDFs()
+    witeDFs("parquet")
     Constants.pathTypePairList(writeFstestDir).foreach(v => {
       assert(sparkSession.read.parquet(v._2.pathLeft).count() == 20)
       assert(sparkSession.read.parquet(v._2.pathRight).count() == 20)
     })
 
   }
-  "runJoins" should "work" in {
+  "runJoins parquet" should "work" in {
     cleanDFs()
-    witeDFs()
-    new JoinTest(sparkSession).runJoins(writeFstestDir).show()
+    witeDFs("parquet")
+    new JoinTest(sparkSession).runJoins(writeFstestDir,"parquet").show()
+  }
+
+  "runJoins orc" should "work" in {
+    cleanDFs()
+    witeDFs("orc")
+    new JoinTest(sparkSession).runJoins(writeFstestDir,"orc").show()
   }
 
 
   "getSizeMB" should "work" in {
     cleanDFs()
-    witeDFs()
-    new PrepareData(sparkSession).statSize(workDirectory = writeFstestDir).show()
+    witeDFs("parquet")
+    new BuildData(sparkSession).statSize(workDirectory = writeFstestDir).show()
   }
 
   "Analyze stat" should "work" in {
     cleanDFs()
-    witeDFs()
+    witeDFs("parquet")
     val analyzeStat = new AnalyzeStat(sparkSession).analyzeStat(
-      new PrepareData(sparkSession).statSize(writeFstestDir),
-      new JoinTest(sparkSession).runJoins(writeFstestDir)
+      new BuildData(sparkSession).statSize(writeFstestDir),
+      new JoinTest(sparkSession).runJoins(writeFstestDir,"parquet"),
+      "parquet",
+      "none"
     )
     analyzeStat.show()
     assert(

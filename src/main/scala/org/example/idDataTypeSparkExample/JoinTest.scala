@@ -9,10 +9,11 @@ import java.util.Date
 class JoinTest(sparkSession: SparkSession) {
 
 
-  def runJoins(workDirectory: String): DataFrame = {
+  def runJoins(workDirectory: String,
+               fileFormat:String): DataFrame = {
     val resultList = Constants.pathTypePairList(workDirectory).map(t => {
 
-      val df = join(t._2)
+      val df = join(t._2,fileFormat)
       df.explain()
       val testStartTime = new Date().getTime
       val count = df.count()
@@ -20,12 +21,12 @@ class JoinTest(sparkSession: SparkSession) {
       val avg = df.agg(functions.avg(s"${Columns._id}").cast(StringType)).first().getString(0)
       val testEndTime = new Date().getTime
 
-      Row(t._1, testEndTime - testStartTime, count, countDistinct, avg)
+      Row(t._1, (testEndTime - testStartTime)/1000, count, countDistinct, avg)
     }
     )
     val schema = StructType(Array(
       StructField(s"${Columns._type_name}", StringType, nullable = false),
-      StructField(s"${Columns._duration}", LongType, nullable = false),
+      StructField(s"${Columns._duration_s}", LongType, nullable = false),
       StructField(s"${Columns._count_rows}", LongType, nullable = false),
       StructField(s"${Columns._count_distinct_id}", LongType, nullable = false),
       StructField(s"${Columns._avg_id}", StringType, nullable = true),
@@ -35,9 +36,11 @@ class JoinTest(sparkSession: SparkSession) {
       .orderBy("type_name")
   }
 
-  private def join(typePath: Constants.TypePath): DataFrame = {
-    val left = sparkSession.read.parquet(typePath.pathLeft)
-    val right = sparkSession.read.parquet(typePath.pathRight)
+  private def join(
+    typePath: Constants.TypePath,
+    fileFormat:String): DataFrame = {
+    val left = sparkSession.read.format(fileFormat).load(typePath.pathLeft)
+    val right = sparkSession.read.format(fileFormat).load(typePath.pathRight)
     left.join(right, Array(s"${Columns._id}"))
   }
 }

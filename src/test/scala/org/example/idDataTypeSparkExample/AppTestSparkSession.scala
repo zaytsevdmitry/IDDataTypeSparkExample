@@ -14,7 +14,7 @@ object AppTestSparkSession{
 		.config("spark.shuffle.compress", "false")
 		.config("spark.dynamicAllocation.enabled", "false")
 		.config("spark.ui.enabled", "false")
-		.config("spark.ui.showConsoleProgress", "false")
+		.config("spark.ui.showConsoleProgress", "true")
 		.config("spark.driver.host","10.201.128.23")
 		.getOrCreate()
 

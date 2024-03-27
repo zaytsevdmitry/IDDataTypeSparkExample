@@ -6,9 +6,10 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.example.idDataTypeSparkExample.shared.{Columns, Constants}
 
-class PrepareData(sparkSession: SparkSession) {
+class BuildData(sparkSession: SparkSession) {
 
   val defaultCompression = "snappy"
+
   def buildSource(
     startId: Long,
     endId: Long,
@@ -27,9 +28,14 @@ class PrepareData(sparkSession: SparkSession) {
       .createDataFrame(sparkSession.sparkContext.parallelize(data), schema)
       .withColumn(
 				s"${Columns._id}",
-				sequence(column("start_id"), column("end_id"), column("step")))
-      .selectExpr("explode (id) as id")
-      .select(column(s"${Columns._id}"), expr("uuid()").as("id_1"))
+				sequence(
+          column(s"${Columns._start_id}"),
+          column(s"${Columns._end_id}"),
+          column(s"${Columns._step}")))
+      .selectExpr(s"explode (${Columns._id}) as ${Columns._id}")
+      .select(
+        column(s"${Columns._id}"),
+        expr("uuid()").as("id_1"))
 
     if (cached) df.cache()
     else df
@@ -39,10 +45,11 @@ class PrepareData(sparkSession: SparkSession) {
     workDirectory: String,
     sourceDataFrame: DataFrame,
     repartitionWrite: Int,
-    compression:String): Unit = {
+    compression:String,
+    fileFormat:String): Unit = {
     Constants.pathTypePairList(workDirectory).foreach(v => {
-      writeDF(v._2.pathLeft, sourceDataFrame, v._1, repartitionWrite, compression)
-      writeDF(v._2.pathRight, sourceDataFrame, v._1, repartitionWrite, compression)
+      writeDF(v._2.pathLeft, sourceDataFrame, v._1, repartitionWrite, compression, fileFormat)
+      writeDF(v._2.pathRight, sourceDataFrame, v._1, repartitionWrite, compression, fileFormat)
     })
   }
 
@@ -51,7 +58,8 @@ class PrepareData(sparkSession: SparkSession) {
     dataFrame: DataFrame,
     strType: String,
     repartitionWrite: Int,
-    compression:String): Unit = {
+    compression:String,
+    fileFormat:String): Unit = {
 
     val c = if (compression == null) defaultCompression else compression
 
@@ -71,8 +79,9 @@ class PrepareData(sparkSession: SparkSession) {
     df.repartitionByRange(repartitionWrite, column(s"${Columns._id}"))
       .write
       .mode(SaveMode.ErrorIfExists)
+      .format(fileFormat)
       .option("compression", c)
-      .parquet(s"$path")
+      .save(s"$path")
   }
 
   def statSize(workDirectory: String): DataFrame = {
