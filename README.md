@@ -2,67 +2,67 @@
 
 ## Command line attributes
 
-###workDirectory
+### workDirectory
 * type:String
 * Directory where testing data is created
 
-###fileFormat
+### fileFormat
 * type:String
 * Data file format (like parquet/orc etc)
 
-###buildData 
+### buildData 
 * type:Boolean
 * build test data
 * values:true/false
 
-###buildRangeStartId
+### buildRangeStartId
 * type:Long
 * The value from which the generation of identifiers will begin.
 
-###buildRangeEndId
+### buildRangeEndId
 * type:Long
 * The value up to which identifiers were generated.
 
-###buildRangeStep
+### buildRangeStep
 * type:Int
 * The step with which identifiers are generated
 
-###buildCached
+### buildCached
 * type: Boolean
 * If you do not use caching, the generation will be repeated for each data type. If you have available RAM, it is better to enable the use of cache, otherwise you can disable.
 * values:true/false
 
-###buildRepartition
+### buildRepartition
 * type: Int
 * Affects the number of parts of the dataset. This is reflected in the number of files when written to disk.
 
-###buildCompression
+### buildCompression
 * type: String
 * Type of compression codec
 * values: snappy, gzip, lzo, brotli, lz4, zstd.
 
-###buildExplain
+### buildExplain
 * type:Boolean
 * Print test data generation explanation plan
 * values:true/false
 
-###testJoins
+### testJoins
 * type: Boolean
 * Test the join of datasets
 * values:true/false
 
-###testJoinsExplain
+### testJoinsExplain
 * type: Boolean
 * Print test join explanation plan
 * values:true/false
 
-###waitForUser
+### waitForUser
 * type: Boolean
 * Wait after the application has completed input for an explicit request to terminate the application.
   Necessary for cases when the user wants to view the spark-ui
 * values:true/false
 
-###logStatDir
+### logStatDir
 * type:String
 * The location where the dataset with statistics will wrote. The writing is made in the parquet format using the append method.
 
