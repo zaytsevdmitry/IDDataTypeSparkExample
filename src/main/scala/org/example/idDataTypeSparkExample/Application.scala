@@ -13,18 +13,24 @@ class Application(config: Config) {
   sparkSession.sparkContext.setLogLevel("ERROR")
 
   def run(): Unit = {
+
     val dataStore = new BuildData(sparkSession)
 
     if (config.buildData) {
+
+      val sourceDataFrame = dataStore
+        .buildSource(
+          config.buildRangeStartId,
+          config.buildRangeEndId,
+          config.buildRangeStep,
+          config.buildCached)
+
+      if (config.buildExplain) sourceDataFrame.explain()
+
       dataStore
         .writeDFs(
           workDirectory = config.workDirectory,
-          sourceDataFrame = dataStore
-            .buildSource(
-              config.buildRangeStartId,
-              config.buildRangeEndId,
-              config.buildRangeStep,
-              config.buildCached),
+          sourceDataFrame = sourceDataFrame,
           repartitionWrite = config.buildRepartition,
           compression = config.buildCompression,
           fileFormat = config.fileFormat
