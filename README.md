@@ -66,7 +66,7 @@
 * type:String
 * The location where the dataset with statistics will wrote. The writing is made in the parquet format using the append method.
 
-##Exapple command line
+## Exapple command line
 ```
 > spark-submit \
  --conf spark.executor.memory=20g \ # 20gb need to generate 100000001 rows
