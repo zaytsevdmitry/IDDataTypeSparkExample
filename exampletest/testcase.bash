@@ -47,3 +47,6 @@ do
   echo $CMD
   $CMD
 done
+
+
+

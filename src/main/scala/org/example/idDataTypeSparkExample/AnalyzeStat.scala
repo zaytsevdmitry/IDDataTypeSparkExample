@@ -19,13 +19,13 @@ class AnalyzeStat(sparkSession: SparkSession) {
 
     dataStatDF
       .filter(s"${Columns._type_name} = '${Constants._bigint}'")
-      .select(column(s"${Columns._size_mb}").as(s"${Columns._size_mb_100_pcnt}"))
+      .select(column(s"${Columns._size_mb}").as(s"${Columns._size_mb_target}"))
       .crossJoin(dataStatDF)
       .createOrReplaceTempView("data_stat")
-
+    sparkSession.sql("select * from data_stat").show()
     joinTestDF
       .filter(s"${Columns._type_name} = '${Constants._bigint}'")
-      .select(column(s"${Columns._duration_s}").as(s"${Columns._duration_100_pcnt}"))
+      .select(column(s"${Columns._duration_s}").as(s"${Columns._duration_target}"))
       .crossJoin(joinTestDF)
       .createOrReplaceTempView("join_test")
 
@@ -44,9 +44,15 @@ class AnalyzeStat(sparkSession: SparkSession) {
         s"""
            |select ${Columns._type_name}
            |     , ${Columns._size_mb}
-           |     , ${Columns._size_mb} / ${Columns._size_mb_100_pcnt} * 100 as ${Columns._size_mb}_pcnt
+           |     , case when ${Columns._size_mb_target} != 0
+           |            then ${Columns._size_mb} / ${Columns._size_mb_target} * 100
+           |            else 0
+           |        end as ${Columns._size_mb}_pcnt
            |     , ${Columns._duration_s}
-           |     , ${Columns._duration_s} / ${Columns._duration_100_pcnt} * 100 as ${Columns._duration_s}_pcnt
+           |     , case when ${Columns._duration_target} != 0
+           |            then ${Columns._duration_s} / ${Columns._duration_target} * 100
+           |            else 0
+           |        end as ${Columns._duration_s}_pcnt
            |from data_stat d
            | join join_test j
            |   using(${Columns._type_name})

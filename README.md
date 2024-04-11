@@ -12,16 +12,16 @@
 
 ### buildData 
 * type:Boolean
-* build test data
+* building of test data sets
 * values:true/false
 
 ### buildRangeStartId
 * type:Long
-* The value from which the generation of identifiers will begin.
+* start of identifiers generation.
 
 ### buildRangeEndId
 * type:Long
-* The value up to which identifiers were generated.
+* end of identifiers generation
 
 ### buildRangeStep
 * type:Int
