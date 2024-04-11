@@ -1,8 +1,9 @@
 package org.example.idDataTypeSparkExample
 
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.spark.sql.functions.{column, expr, sequence}
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions.{column, expr, row_number, sequence, unix_timestamp}
+import org.apache.spark.sql.types.{DecimalType, DoubleType, LongType, StringType, StructField, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.example.idDataTypeSparkExample.shared.{Columns, Constants}
 
@@ -14,28 +15,34 @@ class BuildData(sparkSession: SparkSession) {
     startId: Long,
     endId: Long,
     step: Long,
+    repartitionWrite: Int,
     cached: Boolean
   ): DataFrame = {
 
     val data = Seq(Row(startId, endId, step))
     val schema = StructType(Array(
-      StructField("start_id", LongType, nullable = false),
-      StructField("end_id", LongType, nullable = false),
-      StructField("step", LongType, nullable = false),
+      StructField(Columns._start_id, LongType, nullable = false),
+      StructField(Columns._end_id, LongType, nullable = false),
+      StructField(Columns._step, LongType, nullable = false),
     ))
     // elements due to exceeding the array size limit 2147483632.
+    val windowSpec  = Window.orderBy(Columns._id_bigint)
+
     val df = sparkSession
       .createDataFrame(sparkSession.sparkContext.parallelize(data), schema)
       .withColumn(
-				s"${Columns._id}",
+				s"${Columns._id_bigint}",
 				sequence(
           column(s"${Columns._start_id}"),
           column(s"${Columns._end_id}"),
           column(s"${Columns._step}")))
-      .selectExpr(s"explode (${Columns._id}) as ${Columns._id}")
-      .select(
-        column(s"${Columns._id}"),
-        expr("uuid()").as("id_1"))
+      .selectExpr(s"explode (${Columns._id_bigint}) as ${Columns._id_bigint}")
+      .repartition(repartitionWrite)
+      .withColumn(Columns._id_row_num, row_number.over(windowSpec))
+      .withColumn(Columns._id_ts, column(Columns._id_row_num).cast(TimestampType))
+      .withColumn(Columns._id_uuid, expr("uuid()"))
+      .withColumn(Columns._id_decimal, column(Columns._id_bigint).cast(DecimalType(19, 0)))
+      .withColumn(Columns._id_string, column(Columns._id_bigint).cast(StringType))
 
     if (cached) df.cache()
     else df
@@ -46,44 +53,46 @@ class BuildData(sparkSession: SparkSession) {
     sourceDataFrame: DataFrame,
     repartitionWrite: Int,
     compression:String,
-    fileFormat:String): Unit = {
+    fileFormat:String,
+    buildSingleIdColumn:Boolean
+  ): Unit = {
+
+
     Constants.pathTypePairList(workDirectory).foreach(v => {
-      writeDF(v._2.pathLeft, sourceDataFrame, v._1, repartitionWrite, compression, fileFormat)
-      writeDF(v._2.pathRight, sourceDataFrame, v._1, repartitionWrite, compression, fileFormat)
+      val sdfRenamed = sourceDataFrame
+        .withColumnRenamed(s"${Columns._id}_${v._1}",Columns._id)
+
+      val cols = if (buildSingleIdColumn) Array{Columns._id} else sdfRenamed.columns
+
+      val sdf = sdfRenamed.select(cols.map(c=> column(c)):_*)
+
+      writeDF(v._2.pathLeft, sdf, repartitionWrite, compression, fileFormat)
+      writeDF(v._2.pathRight, sdf, repartitionWrite, compression, fileFormat)
     })
   }
 
   private def writeDF(
     path: String,
     dataFrame: DataFrame,
-    strType: String,
     repartitionWrite: Int,
     compression:String,
     fileFormat:String): Unit = {
 
     val c = if (compression == null) defaultCompression else compression
 
-    val df = if (strType.equals(Constants._decimal)) {
-      dataFrame
-        .select(column(s"${Columns._id}")
-          .cast(DecimalType(19, 0))) // length of max long
-    } else if (strType.equals(Constants._uuid)) {
-      dataFrame
-        .drop(s"${Columns._id}")
-        .withColumnRenamed(s"${Columns._id_1}", s"${Columns._id}")
-    } else {
-      dataFrame
-        .select(column(s"${Columns._id}").cast(strType))
-    }
-
-    df.repartitionByRange(repartitionWrite, column(s"${Columns._id}"))
+    dataFrame
+      .repartitionByRange(repartitionWrite, column(s"${Columns._id}"))
       .write
       .mode(SaveMode.ErrorIfExists)
       .format(fileFormat)
       .option("compression", c)
       .save(s"$path")
   }
+  private def dropColumns(
+    dataFrame: DataFrame):DataFrame = {
 
+    dataFrame.drop(dataFrame.columns.filter(c => c.equals(Columns._id)):_*)
+  }
   def statSize(workDirectory: String): DataFrame = {
 
     val data = Constants.pathTypePairList(workDirectory).map(v => {

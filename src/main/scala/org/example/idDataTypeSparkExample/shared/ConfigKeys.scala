@@ -11,6 +11,7 @@ object ConfigKeys {
   val buildRepartition = "buildRepartition"
   val buildCompression = "buildCompression"
   val buildExplain = "buildExplain"
+  val buildSingleIdColumn = "buildSingleIdColumn"
   val testJoins = "testJoins"
   val testJoinsExplain = "testJoinsExplain"
   val waitForUser = "waitForUser"
@@ -27,6 +28,7 @@ object ConfigKeys {
     buildRepartition,
     buildCompression,
     buildExplain,
+    buildSingleIdColumn,
     testJoins,
     testJoinsExplain,
     waitForUser,

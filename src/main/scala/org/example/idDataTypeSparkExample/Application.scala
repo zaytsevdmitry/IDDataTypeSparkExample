@@ -1,11 +1,7 @@
 package org.example.idDataTypeSparkExample
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.example.idDataTypeSparkExample.shared.{Columns, Config, ConfigKeys}
-import org.apache.spark.sql.functions.lit
-
-import java.sql.Timestamp
-import java.util.Date
+import org.example.idDataTypeSparkExample.shared.{Columns, Config}
 import scala.io.StdIn.readLine
 
 class Application(config: Config) {
@@ -23,7 +19,9 @@ class Application(config: Config) {
           config.buildRangeStartId,
           config.buildRangeEndId,
           config.buildRangeStep,
-          config.buildCached)
+          config.buildRepartition,
+          config.buildCached
+        )
 
       if (config.buildExplain) sourceDataFrame.explain()
 
@@ -33,7 +31,8 @@ class Application(config: Config) {
           sourceDataFrame = sourceDataFrame,
           repartitionWrite = config.buildRepartition,
           compression = config.buildCompression,
-          fileFormat = config.fileFormat
+          fileFormat = config.fileFormat,
+          buildSingleIdColumn = config.buildSingleIdColumn
         )
     }
     val dataStatDf = dataStore.statSize(config.workDirectory).orderBy(Columns._type_name).cache()
@@ -43,8 +42,6 @@ class Application(config: Config) {
       val jointestDf = new JoinTest(sparkSession)
         .runJoins(config.workDirectory, config.fileFormat)
         .orderBy(Columns._type_name).cache()
-
-      jointestDf.show()
 
       val analyzeStatDf = new AnalyzeStat(sparkSession)
         .analyzeStat(dataStatDf, jointestDf,config.fileFormat,config.buildCompression)

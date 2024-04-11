@@ -10,7 +10,8 @@ class ApplicationTest extends Test {
 
   "buildSource" should "work" in {
 
-    val s = new BuildData(sparkSession).buildSource(startId=1L, endId=20L, step=1L, cached=true)
+    val s = new BuildData(sparkSession)
+      .buildSource(startId=1L, endId=20L, step=1L, cached=true,repartitionWrite = 1)
     s.show(1000)
     assert(s.count() == 20)
   }
@@ -29,7 +30,7 @@ class ApplicationTest extends Test {
       fs.delete(writeFstestDirPath, true)
   }
 
-  def witeDFs(fileFormat:String): Unit = {
+  def witeDFsSingleColumn(fileFormat:String, buildSingle:Boolean): Unit = {
     val ds = new BuildData(sparkSession)
     ds.writeDFs(
       writeFstestDir,
@@ -37,15 +38,17 @@ class ApplicationTest extends Test {
         startId=1L,
         endId=20L,
         step=1L,
-        cached=true),
+        cached=true,
+        repartitionWrite = 1),
       1,
       "none",
-      fileFormat)
+      fileFormat,
+      buildSingle)
   }
 
   "Write parquet" should "work" in {
     cleanDFs()
-    witeDFs("parquet")
+    witeDFsSingleColumn("parquet", true)
     Constants.pathTypePairList(writeFstestDir).foreach(v => {
       assert(sparkSession.read.parquet(v._2.pathLeft).count() == 20)
       assert(sparkSession.read.parquet(v._2.pathRight).count() == 20)
@@ -54,26 +57,26 @@ class ApplicationTest extends Test {
   }
   "runJoins parquet" should "work" in {
     cleanDFs()
-    witeDFs("parquet")
+    witeDFsSingleColumn("parquet",true)
     new JoinTest(sparkSession).runJoins(writeFstestDir,"parquet").show()
   }
 
   "runJoins orc" should "work" in {
     cleanDFs()
-    witeDFs("orc")
+    witeDFsSingleColumn("orc",true)
     new JoinTest(sparkSession).runJoins(writeFstestDir,"orc").show()
   }
 
 
   "getSizeMB" should "work" in {
     cleanDFs()
-    witeDFs("parquet")
+    witeDFsSingleColumn("parquet",true)
     new BuildData(sparkSession).statSize(workDirectory = writeFstestDir).show()
   }
 
   "Analyze stat" should "work" in {
     cleanDFs()
-    witeDFs("parquet")
+    witeDFsSingleColumn("parquet",true)
     val analyzeStat = new AnalyzeStat(sparkSession).analyzeStat(
       new BuildData(sparkSession).statSize(writeFstestDir),
       new JoinTest(sparkSession).runJoins(writeFstestDir,"parquet"),

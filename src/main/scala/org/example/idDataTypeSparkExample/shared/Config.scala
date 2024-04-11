@@ -11,6 +11,7 @@ case class Config(
   buildRepartition: Int,
   buildCompression: String,
   buildExplain:Boolean,
+  buildSingleIdColumn:Boolean,
   testJoins: Boolean,
   testJoinsExplain: Boolean,
   waitForUser: Boolean,

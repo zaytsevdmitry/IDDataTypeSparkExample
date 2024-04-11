@@ -1,9 +1,15 @@
 #!/bin/bash
-workDirectoryRoot=/tmp/IDDataTypeSparkExample
+testcaseFile=$0
+if testcaseFile=""
+then
+  printf "testcase.bash <file>"
+  exit 1
+fi
+workDirectoryRoot=/tmp/IDDataTypeSparkExample/$testcaseFile
 
 hdfs dfs -rm -r -skipTrash $workDirectoryRoot
 
-for line in $(awk 'NR>1' ./testcase.csv| tr -d ' '); # skip first line and drop spaces
+for line in $(awk 'NR>1' ./$testcaseFile| tr -d ' '); # skip first line and drop spaces
 do
   IFS=$';'; split=($line); unset IFS;
   # $split is now a bash array
@@ -17,9 +23,10 @@ do
   buildRepartition=${split[6]}
   buildCompression=${split[7]}
   buildExplain=${split[8]}
-  testJoins=${split[9]}
-  testJoinsExplain=${split[10]}
-  waitForUser=${split[11]}
+  buildSingleIdColumn=${split[9]}
+  testJoins=${split[10]}
+  testJoinsExplain=${split[11]}
+  waitForUser=${split[12]}
 
 # 20gb need to generate 100000001 rows
   CMD="spark-submit \
@@ -40,6 +47,7 @@ do
   buildRepartition=$buildRepartition \
   buildCompression=$buildCompression \
   buildExplain=$buildExplain \
+  buildSingleIdColumn=$buildSingleIdColumn \
   testJoins=$testJoins \
   testJoinsExplain=$testJoinsExplain \
   waitForUser=$waitForUser \

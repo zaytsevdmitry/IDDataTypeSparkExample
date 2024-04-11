@@ -26,6 +26,7 @@ object Main {
       buildRepartition = cfg(ConfigKeys.buildRepartition).toInt,
       buildCompression = cfg(ConfigKeys.buildCompression),
       buildExplain = cfg(ConfigKeys.buildExplain).toBoolean,
+      buildSingleIdColumn = cfg(ConfigKeys.buildSingleIdColumn).toBoolean,
       testJoins = cfg(ConfigKeys.testJoins).toBoolean,
       testJoinsExplain = cfg(ConfigKeys.testJoinsExplain).toBoolean,
       waitForUser = cfg(ConfigKeys.waitForUser).toBoolean,
