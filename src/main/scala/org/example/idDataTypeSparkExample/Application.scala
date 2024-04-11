@@ -2,6 +2,7 @@ package org.example.idDataTypeSparkExample
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.example.idDataTypeSparkExample.shared.{Columns, Config}
+
 import scala.io.StdIn.readLine
 
 class Application(config: Config) {

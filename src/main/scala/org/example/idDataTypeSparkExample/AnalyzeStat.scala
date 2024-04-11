@@ -1,9 +1,9 @@
 package org.example.idDataTypeSparkExample
 
-import org.apache.spark.sql.functions.{column, lit}
+import org.apache.spark.sql.functions.column
 import org.apache.spark.sql.types.{StringType, StructField, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.example.idDataTypeSparkExample.shared.{Columns, ConfigKeys, Constants,Config}
+import org.example.idDataTypeSparkExample.shared.{Columns, ConfigKeys, Constants}
 
 import java.sql.Timestamp
 import java.util.Date

@@ -2,7 +2,7 @@ package org.example.idDataTypeSparkExample
 
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.expressions.Window
-import org.apache.spark.sql.functions.{column, expr, row_number, sequence, unix_timestamp}
+import org.apache.spark.sql.functions.{column, expr, row_number, sequence}
 import org.apache.spark.sql.types.{DecimalType, DoubleType, LongType, StringType, StructField, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.example.idDataTypeSparkExample.shared.{Columns, Constants}

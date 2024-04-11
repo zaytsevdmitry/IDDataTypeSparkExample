@@ -46,6 +46,11 @@
 * Print test data generation explanation plan
 * values:true/false
 
+### buildSingleIdColumn
+* type:Boolean
+* All columns will be deleted except id. If false  all columns will be saved (bigint, decimal, string-bigint, string-uid, timestamp)
+* values:true/false
+
 ### testJoins
 * type: Boolean
 * Test the join of datasets
@@ -84,6 +89,7 @@ buildCached=true
 buildRepartition=10
 buildCompression=none
 buildExplain=true
+buildSingleIdColumn=true
 testJoins=true
 testJoinsExplain=true
 waitForUser=true
