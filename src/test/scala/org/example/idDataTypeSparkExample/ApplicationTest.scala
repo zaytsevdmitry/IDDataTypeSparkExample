@@ -12,6 +12,7 @@ class ApplicationTest extends Test {
 
     val s = new BuildData(sparkSession)
       .buildSource(startId=1L, endId=20L, step=1L, cached=true,repartitionWrite = 1)
+    s.printSchema()
     s.show(1000)
     assert(s.count() == 20)
   }
@@ -83,6 +84,7 @@ class ApplicationTest extends Test {
       "parquet",
       "none"
     )
+    analyzeStat.printSchema()
     analyzeStat.show()
     assert(
       analyzeStat.count() == 4
