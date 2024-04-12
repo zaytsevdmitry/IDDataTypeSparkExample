@@ -1,10 +1,13 @@
 #!/bin/bash
-testcaseFile=$0
-if testcaseFile=""
+testcaseFile=$1
+
+if [ -z "$testcaseFile" ];
 then
-  printf "testcase.bash <file>"
+  echo "use argument:"
+  echo "testcase.bash <file>"
   exit 1
 fi
+
 workDirectoryRoot=/tmp/IDDataTypeSparkExample/$testcaseFile
 
 hdfs dfs -rm -r -skipTrash $workDirectoryRoot
