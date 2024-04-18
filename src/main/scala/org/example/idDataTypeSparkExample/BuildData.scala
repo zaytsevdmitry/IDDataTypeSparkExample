@@ -7,6 +7,8 @@ import org.apache.spark.sql.types.{DecimalType, DoubleType, LongType, StringType
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.example.idDataTypeSparkExample.shared.{Columns, Constants}
 
+import java.util.concurrent.{Executors,Executor}
+
 class BuildData(sparkSession: SparkSession) {
 
   val defaultCompression = "snappy"
@@ -65,7 +67,9 @@ class BuildData(sparkSession: SparkSession) {
       val cols = if (buildSingleIdColumn) Array{Columns._id} else sdfRenamed.columns
 
       val sdf = sdfRenamed.select(cols.map(c=> column(c)):_*)
-
+      val parallelism = 100
+      val threadPool = Executors.newFixedThreadPool(parallelism)
+      threadPool.execute { () => }
       writeDF(v._2.pathLeft, sdf, repartitionWrite, compression, fileFormat)
       writeDF(v._2.pathRight, sdf, repartitionWrite, compression, fileFormat)
     })
@@ -113,4 +117,9 @@ class BuildData(sparkSession: SparkSession) {
     val cs = fs.getContentSummary(new Path(path))
     cs.getLength / 1024 / 1024
   }
+
+  class writeExecutor extends Executor{
+    override def execute(command: Runnable): Unit = ???
+  }
+
 }
