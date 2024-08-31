@@ -2,16 +2,20 @@ package org.example.idDataTypeSparkExample.shared
 
 object ConfigKeys {
   val workDirectory = "workDirectory"
-  val fileFormat="fileFormat"
+  val fileFormats="fileFormats"
+  val analyzeReferenceCompression="analyzeReferenceCompression"
+  val analyzeReferenceFileFormat="analyzeReferenceFileFormat"
+  val analyzeReferenceDataType="analyzeReferenceDataType"
   val buildData = "buildData"
+  val buildExplain = "buildExplain"
   val buildRangeStartId = "buildRangeStartId"
   val buildRangeEndId = "buildRangeEndId"
   val buildRangeStep = "buildRangeStep"
-  val buildCached = "buildCached"
   val buildRepartition = "buildRepartition"
-  val buildCompression = "buildCompression"
-  val buildExplain = "buildExplain"
+  val buildCompressions = "buildCompressions"
   val buildSingleIdColumn = "buildSingleIdColumn"
+  val buildSliceCount = "buildSliceCount"
+  val buildWriteThreadCount= "buildWriteThreadCount"
   val testJoins = "testJoins"
   val testJoinsExplain = "testJoinsExplain"
   val waitForUser = "waitForUser"
@@ -19,16 +23,20 @@ object ConfigKeys {
 
   val params = Seq(
     workDirectory,
-    fileFormat,
+    fileFormats,
+    analyzeReferenceCompression,
+    analyzeReferenceFileFormat,
+    analyzeReferenceDataType,
+    buildCompressions,
     buildData,
+    buildExplain,
     buildRangeStartId,
     buildRangeEndId,
     buildRangeStep,
-    buildCached,
     buildRepartition,
-    buildCompression,
-    buildExplain,
     buildSingleIdColumn,
+    buildSliceCount,
+    buildWriteThreadCount,
     testJoins,
     testJoinsExplain,
     waitForUser,

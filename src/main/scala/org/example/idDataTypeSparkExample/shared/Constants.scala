@@ -9,9 +9,5 @@ object Constants {
 
   val types = Seq(_bigint, _string, _decimal, _uuid)
 
-  def pathTypePairList(workDirectory: String):Seq[(String,TypePath)] =
-    types.map(t => t -> TypePath(s"$workDirectory/left/$t", s"$workDirectory/right/$t"))
-
-  case class TypePath(pathLeft: String, pathRight: String)
 
 }
