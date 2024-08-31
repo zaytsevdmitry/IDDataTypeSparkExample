@@ -1,99 +1,163 @@
 package org.example.idDataTypeSparkExample
 
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.example.idDataTypeSparkExample.shared.Constants
+import org.apache.spark.sql.DataFrame
+import org.example.idDataTypeSparkExample.shared.{Config, Constants, FileSystemStructure, TypePath}
 
 class ApplicationTest extends Test {
 
-	val writeFstestDir = "tmp/org.example.idDataTypeSparkExample.test/WriteDfs"
-	val writeFstestDirPath = new Path(s"$writeFstestDir")
+	val writeFSTestDir = "tmp/org.example.idDataTypeSparkExample.test/WriteDfs"
+	val writeFSTestDirPath = new Path(s"$writeFSTestDir")
+  val sourceTemplatePath = s"$writeFSTestDir/sourcetemplate"
+  val testTypePaths: Seq[TypePath] = new FileSystemStructure(writeFSTestDir,Array("parquet","orc", "csv"),Array("gzip","none")).typePaths
+  val testingSetRowCount = 320000
+  def buildSource():DataFrame ={
+
+    new BuildData(sparkSession)
+      .buildSource(
+        startId=1L,
+        endId=testingSetRowCount,
+        step=1L,
+        repartitionWrite = 10,
+        sourceTemplatePath=sourceTemplatePath,
+        buildExplain = true,
+        buildSliceCount = 100000
+      )
+    sparkSession.read.parquet(sourceTemplatePath)
+  }
+
+
 
   "buildSource" should "work" in {
-
-    val s = new BuildData(sparkSession)
-      .buildSource(startId=1L, endId=20L, step=1L, cached=true,repartitionWrite = 1)
+    cleanDFs()
+    val s = buildSource()
     s.printSchema()
     s.show(1000)
-    assert(s.count() == 20)
+    assert(s.count() == testingSetRowCount)
   }
 
   "pathTypePairList" should "work" in {
-    val pathLeft = Constants.pathTypePairList(workDirectory = writeFstestDir).head._2.pathLeft
-    assert(pathLeft.startsWith(writeFstestDir))
-    println(Constants.pathTypePairList(workDirectory = writeFstestDir))
+    val fssSeq = testTypePaths
+
+    val pathLeft = fssSeq.head.pathLeft
+
+    assert(pathLeft.startsWith(writeFSTestDir))
+    fssSeq.foreach(p=>{
+      println(p.fileFormat)
+      println(p.compression)
+      println(p.logicalTypeName)
+      println(p.pathLeft)
+      println(p.pathRight)
+      println("------------------")
+    })
   }
 
   def cleanDFs(): Unit = {
 
-    println(writeFstestDir)
+    println(s"cleanup $writeFSTestDir")
     val fs = FileSystem.get(sparkSession.sparkContext.hadoopConfiguration)
-    if (fs.exists(writeFstestDirPath))
-      fs.delete(writeFstestDirPath, true)
+    if (fs.exists(writeFSTestDirPath))
+      fs.delete(writeFSTestDirPath, true)
   }
 
-  def witeDFsSingleColumn(fileFormat:String, buildSingle:Boolean): Unit = {
+  def writeDFsSingleColumn(buildSingle:Boolean): Unit = {
     val ds = new BuildData(sparkSession)
-    ds.writeDFs(
-      writeFstestDir,
-      ds.buildSource(
-        startId=1L,
-        endId=20L,
-        step=1L,
-        cached=true,
-        repartitionWrite = 1),
-      1,
-      "none",
-      fileFormat,
-      buildSingle)
+    ds.writeDFs(sourceDataFrame=buildSource(),
+      repartitionWrite=2,
+      buildSingleIdColumn=buildSingle,
+      writeThreadCount=2,
+      typePaths = testTypePaths
+    )
   }
 
-  "Write parquet" should "work" in {
+  "Write testing sets" should "work" in {
     cleanDFs()
-    witeDFsSingleColumn("parquet", true)
-    Constants.pathTypePairList(writeFstestDir).foreach(v => {
-      assert(sparkSession.read.parquet(v._2.pathLeft).count() == 20)
-      assert(sparkSession.read.parquet(v._2.pathRight).count() == 20)
+    writeDFsSingleColumn( true)
+
+    testTypePaths
+     .filter(v => v.fileFormat.equals("parquet") && v.compression.equals("gzip"))// test only works types
+      .foreach(v => {
+        assert(sparkSession.read.parquet(v.pathLeft).count() == testingSetRowCount)
+        assert(sparkSession.read.parquet(v.pathRight).count() == testingSetRowCount)
     })
 
   }
-  "runJoins parquet" should "work" in {
+  "runJoins testing sets" should "work" in {
     cleanDFs()
-    witeDFsSingleColumn("parquet",true)
-    new JoinTest(sparkSession).runJoins(writeFstestDir,"parquet").show()
+    writeDFsSingleColumn(true)
+    new JoinTest(sparkSession).runJoins(testTypePaths).show()
   }
 
-  "runJoins orc" should "work" in {
-    cleanDFs()
-    witeDFsSingleColumn("orc",true)
-    new JoinTest(sparkSession).runJoins(writeFstestDir,"orc").show()
-  }
 
 
   "getSizeMB" should "work" in {
     cleanDFs()
-    witeDFsSingleColumn("parquet",true)
-    new BuildData(sparkSession).statSize(workDirectory = writeFstestDir).show()
+    writeDFsSingleColumn(true)
+    new BuildData(sparkSession).statSize(testTypePaths).show()
   }
 
   "Analyze stat" should "work" in {
     cleanDFs()
-    witeDFsSingleColumn("parquet",true)
-    val analyzeStat = new AnalyzeStat(sparkSession).analyzeStat(
-      new BuildData(sparkSession).statSize(writeFstestDir),
-      new JoinTest(sparkSession).runJoins(writeFstestDir,"parquet"),
-      "parquet",
-      "none"
+    writeDFsSingleColumn(true)
+    val analyzeStat = new AnalyzeStat().analyzeStat(
+      new BuildData(sparkSession).statSize(testTypePaths),
+      new JoinTest(sparkSession).runJoins(testTypePaths),
+      referenceFileFormat = "parquet",
+      referenceCompression = "gzip",
+      referenceDataType = "bigint"
     )
     analyzeStat.printSchema()
     analyzeStat.show()
     assert(
-      analyzeStat.count() == 4
+      analyzeStat.count() == 16
     )
   }
 
-  "tmp" should "work" in {
-    val l = 8301034833169298228L / 2147483632
-    println(l)
+  "Config validation" should "wrong" in {
+    val cfg = Config(
+      workDirectory = "",
+      fileFormats = Array("parquet","csv"),
+      analyzeReferenceCompression = "zstd",
+      analyzeReferenceFileFormat = "orc",
+      analyzeReferenceDataType = "bigint",
+      buildCompressions = Array("gzip", "none"),
+      buildData = false,
+      buildExplain = false,
+      buildRangeStartId = 1,
+      buildRangeEndId = 1,
+      buildRangeStep = 1,
+      buildRepartition = 1,
+      buildSingleIdColumn = false,
+      buildSliceCount = 1,
+      buildWriteThreadCount = 1,
+      testJoins = false,
+      testJoinsExplain = false,
+      waitForUser = false,
+      logStatDir = "")
+    assert(!Main.validateConfig(cfg))
+  }
+  "Config validation" should "right" in {
+    val cfg = Config(
+      workDirectory = "",
+      fileFormats = Array("parquet","csv"),
+      analyzeReferenceCompression = "gzip",
+      analyzeReferenceFileFormat = "parquet",
+      analyzeReferenceDataType = "bigint",
+      buildCompressions = Array("gzip", "none"),
+      buildData = false,
+      buildExplain = false,
+      buildRangeStartId = 1,
+      buildRangeEndId = 1,
+      buildRangeStep = 1,
+      buildRepartition = 1,
+      buildSingleIdColumn = false,
+      buildSliceCount = 1,
+      buildWriteThreadCount = 1,
+      testJoins = false,
+      testJoinsExplain = false,
+      waitForUser = false,
+      logStatDir = "")
+    assert(Main.validateConfig(cfg))
   }
 }
 

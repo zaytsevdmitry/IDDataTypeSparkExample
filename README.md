@@ -62,7 +62,6 @@ All extra columns will be dropped, except for the column named ID.
 Disabling the attribute will allow you to simulate a test on a data composition similar to those stored in a real product environment.
 
 ### Limits
-* The target number of dataset rows should not exceed MAX_INT, otherwise you may receive the error "elements due to exceeding the array size limit 2147483632." 
 * When specifying a wide range, make sure there is enough memory for the executor in yarn mode or the driver in local mode
 
 ## Running test queries on data
@@ -142,94 +141,129 @@ only showing top 20 rows
 ## Command line attributes
 
 ### workDirectory
-* type:String
 * Directory where testing data is created
-
-### fileFormat
 * type:String
-* Data file format (like parquet/orc etc)
+
+### fileFormats
+* Data file format list separated by coma (like parquet,orc,csv). 
+* type:String
+
+### analyzeReferenceCompression
+* Filter for determining the reference value for compression. Used to generate analytical output. The value selected by this filter will be taken as 100%
+* type:String
+* values: one of buildCompressions
+
+### analyzeReferenceFileFormat
+* Filter for determining the reference value for fileFormat.Used to generate analytical output. The value selected by this filter will be taken as 100%
+* type:String
+* values: one of fileFormats
+
+### analyzeReferenceDataType
+* Filter for determining the reference value for DataType.Used to generate analytical output. The value selected by this filter will be taken as 100%
+* type:String
+* values: one of bigint,string,uuid,decimal
+
 
 ### buildData 
-* type:Boolean
 * building of test data sets
+* type:Boolean
+* values:true/false
+
+### buildExplain
+* The testing dataset building  plan explanation printing
+* type:Boolean
 * values:true/false
 
 ### buildRangeStartId
-* type:Long
 * start of identifiers generation.
+* type:Long
 
 ### buildRangeEndId
-* type:Long
 * end of identifiers generation
+* type:Long
 
 ### buildRangeStep
-* type:Int
 * The step with which identifiers are generated
+* type:Int
 
-### buildCached
-* type: Boolean
-* If you do not use caching, the generation will be repeated for each data type. If you have available RAM, it is better to enable the use of cache, otherwise you can disable.
-* values:true/false
 
 ### buildRepartition
-* type: Int
 * Affects the number of parts of the dataset. This is reflected in the number of files when written to disk.
+* type: Int
+* 
 
-### buildCompression
+### buildCompressions
 * type: String
-* Type of compression codec
-* values: snappy, gzip, lzo, brotli, lz4, zstd.
+* Types of compression codecs separated by coma
+* values: snappy,gzip,lzo,lz4,zstd etc
+* warnings: some codecs may call exceptions like java.lang.IllegalArgumentException: Codec [gzip] is not available. Available codecs are uncompressed, lz4, lzo, snappy, zlib, none, zstd.
 
 ### buildExplain
-* type:Boolean
 * Print test data generation explanation plan
+* type:Boolean
 * values:true/false
 
 ### buildSingleIdColumn
-* type:Boolean
 * All columns will be deleted except id. If false  all columns will be saved (bigint, decimal, string-bigint, string-uid, timestamp)
+* type:Boolean
 * values:true/false
 
+### buildSliceCount
+* Size of every generated range
+* type:Int
+* values > 0
+
+### buildWriteThreadCount
+* Execute parallel writes. Need more cores and memory
+* type:Int
+* values > 0
+
 ### testJoins
-* type: Boolean
 * Test the join of datasets
+* type: Boolean
 * values:true/false
 
 ### testJoinsExplain
-* type: Boolean
 * Print test join explanation plan
+* type: Boolean
 * values:true/false
 
 ### waitForUser
-* type: Boolean
 * Wait after the application has completed input for an explicit request to terminate the application.
   Necessary for cases when the user wants to view the spark-ui
+* type: Boolean
 * values:true/false
 
 ### logStatDir
-* type:String
 * The location where the dataset with statistics will wrote. The writing is made in the parquet format using the append method.
+* type:String
 
 ## Example command line
 ```
+> export savedatahome=/tmp/IDDataTypeSparkExample4
 > spark-submit \
  --conf spark.executor.memory=20g \ # 20gb need to generate 100000001 rows
  --conf spark.executor.cores=1 \ 
  --conf spark.driver.host=\`hostname -i\` \
- --conf spark.ui.showConsoleProgress=true \  # 
+ --conf spark.ui.showConsoleProgress=true \ 
  --class  org.example.idDataTypeSparkExample.Main IDDataTypeSparkExample.jar \
-workDirectory=/tmp/IDDataTypeSparkExample \
-fileFormat=parquet \
-buildData=true \
-buildRangeStartId=9223372036754775807 \
-buildRangeEndId=9223372036854775807 \
+workDirectory=$savedatahome \
+fileFormats=parquet,orc \
+analyzeReferenceCompression=gzip \
+analyzeReferenceFileFormat=parquet \
+analyzeReferenceDataType=bigint \
+buildData=false \
+buildRangeStartId=9999999 \
+buildRangeEndId=123456789 \
 buildRangeStep=1 \
-buildCached=true \
-buildRepartition=10 \
-buildCompression=none \
+buildRepartition=200 \
+buildCompressions=gzip,zstd \
 buildExplain=true \
-buildSingleIdColumn=true \
+buildSliceCount=500000 \
+buildSingleIdColumn=false \
+buildWriteThreadCount=100 \
 testJoins=true \
 testJoinsExplain=true \
-waitForUser=true 
+waitForUser=true \
+logStatDir=$savedatahome/stat
 ```
